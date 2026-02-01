@@ -1,22 +1,22 @@
 <?php
 
-include 'components/connect.php';
+   include '../components/connect.php';
 
-if(isset($_COOKIE['user_id'])){
-   $user_id = $_COOKIE['user_id'];
-}else{
-   $user_id = '';
-   header('location:login.php');
-}
+   if(isset($_COOKIE['seller_id'])){
+      $seller_id = $_COOKIE['seller_id'];
+   }else{
+      $seller_id = '';
+      header('location:login.php');
+   }
 
 if(isset($_POST['submit'])){
 
-   $select_user = $conn->prepare("SELECT * FROM `users` WHERE id = ? LIMIT 1");
-   $select_user->execute([$user_id]);
-   $fetch_user = $select_user->fetch(PDO::FETCH_ASSOC);
+   $select_seller = $conn->prepare("SELECT * FROM `sellers` WHERE id = ? LIMIT 1");
+   $select_seller->execute([$seller_id]);
+   $fetch_seller = $select_seller->fetch(PDO::FETCH_ASSOC);
 
-   $prev_pass = $fetch_user['password'];
-   $prev_image = $fetch_user['image'];
+   $prev_pass = $fetch_seller['password'];
+   $prev_image = $fetch_seller['image'];
 
    $name = $_POST['name'];
    $name = filter_var($name, FILTER_SANITIZE_STRING);
@@ -25,20 +25,20 @@ if(isset($_POST['submit'])){
    $email = filter_var($email, FILTER_SANITIZE_STRING);
 
    if(!empty($name)){
-      $update_name = $conn->prepare("UPDATE `users` SET name = ? WHERE id = ?");
-      $update_name->execute([$name, $user_id]);
-      $message[] = 'username updated successfully!';
+      $update_name = $conn->prepare("UPDATE `sellers` SET name = ? WHERE id = ?");
+      $update_name->execute([$name, $seller_id]);
+      $success_msg[] = 'username updated successfully!';
    }
 
    if(!empty($email)){
-      $select_email = $conn->prepare("SELECT email FROM `users` WHERE id = ? AND email = ?");
-      $select_email->execute([$user_id, $email]);
+      $select_email = $conn->prepare("SELECT email FROM `sellers` WHERE id = ? AND email = ?");
+      $select_email->execute([$seller_id, $email]);
       if($select_email->rowCount() > 0){
-         $message[] = 'email already taken!';
+         $warning_msg[] = 'email already taken!';
       }else{
-         $update_email = $conn->prepare("UPDATE `users` SET email = ? WHERE id = ?");
-         $update_email->execute([$email, $user_id]);
-         $message[] = 'email updated successfully!';
+         $update_email = $conn->prepare("UPDATE `sellers` SET email = ? WHERE id = ?");
+         $update_email->execute([$email, $seller_id]);
+         $success_msg[] = 'email updated successfully!';
       }
    }
 
@@ -48,19 +48,19 @@ if(isset($_POST['submit'])){
    $rename = unique_id().'.'.$ext;
    $image_size = $_FILES['image']['size'];
    $image_tmp_name = $_FILES['image']['tmp_name'];
-   $image_folder = 'uploaded_files/'.$rename;
+   $image_folder = '../uploaded_files/'.$rename;
 
    if(!empty($image)){
       if($image_size > 2000000){
-         $message[] = 'image size too large!';
+         $warning_msg[] = 'image size too large!';
       }else{
-         $update_image = $conn->prepare("UPDATE `users` SET `image` = ? WHERE id = ?");
-         $update_image->execute([$rename, $user_id]);
+         $update_image = $conn->prepare("UPDATE `sellers` SET `image` = ? WHERE id = ?");
+         $update_image->execute([$rename, $seller_id]);
          move_uploaded_file($image_tmp_name, $image_folder);
          if($prev_image != '' AND $prev_image != $rename){
-            unlink('uploaded_files/'.$prev_image);
+            unlink('../uploaded_files/'.$prev_image);
          }
-         $message[] = 'image updated successfully!';
+         $success_msg[] = 'image updated successfully!';
       }
    }
 
@@ -74,93 +74,84 @@ if(isset($_POST['submit'])){
 
    if($old_pass != $empty_pass){
       if($old_pass != $prev_pass){
-         $message[] = 'old password not matched!';
+         $warning_msg[] = 'old password not matched!';
       }elseif($new_pass != $cpass){
-         $message[] = 'confirm password not matched!';
+         $warning_msg[] = 'confirm password not matched!';
       }else{
          if($new_pass != $empty_pass){
-            $update_pass = $conn->prepare("UPDATE `users` SET password = ? WHERE id = ?");
-            $update_pass->execute([$cpass, $user_id]);
-            $message[] = 'password updated successfully!';
+            $update_pass = $conn->prepare("UPDATE `sellers` SET password = ? WHERE id = ?");
+            $update_pass->execute([$cpass, $seller_id]);
+            $success_msg[] = 'password updated successfully!';
          }else{
-            $message[] = 'please enter a new password!';
+            $warning_msg[] = 'please enter a new password!';
          }
       }
    }
 
 }
-?>
 
+?>
+<style>
+   <?php include '../css/admin_style.css'; ?>
+</style>
 <!DOCTYPE html>
 <html lang="en">
 <head>
    <meta charset="UTF-8">
    <meta http-equiv="X-UA-Compatible" content="IE=edge">
    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-   <title>home</title>
+   <title>Update Profile</title>
 
    <!-- box icon -->
     <link href='https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css' rel='stylesheet'>
 
-   <!-- custom css file link  -->
-   <link rel="stylesheet" href="css/user_style.css">
-
 </head>
 <body>
-<?php include 'components/user_header.php'; ?>
-   <div class="banner">
-        <div class="detail">
-            <h1>update profile</h1>
-            <p>Lorem ipsum dolor sit amet, consectetur adipisicing elit, sed do eiusmod<br>
-            tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam,</p>
-            <span><a href="home.html">home</a><i class='bx bx-right-arrow-alt'></i>update profile</span>
-        </div>
-    </div>
-<section class="form-container">
-   <div class="heading">
-      <span>join blue sky summer</span>
-      <h1>update profile</h1>
-   </div>
+<div class="main-container">
+<?php include '../components/admin_header.php'; ?>
+
+<!-- register section starts  -->
+
+<section class="form-container" style="min-height: calc(100vh - 19rem);">
+
    <form class="register" action="" method="post" enctype="multipart/form-data">
-      
+      <div class="img-box">
+         <img src="../uploaded_files/<?= $fetch_profile['image']; ?>">
+      </div>
+      <h3>update profile</h3>
       <div class="flex">
          <div class="col">
-            <p>your name <span>*</span></p>
-            <input type="text" name="name" placeholder="<?= $fetch_profile['name'] ?>" maxlength="50"  class="box">
-            <p>your email <span>*</span></p>
-            <input type="email" name="email" placeholder="<?= $fetch_profile['email'] ?>" maxlength="20" class="box">
-            <p>update pic <span>*</span></p>
-            <input type="file" name="image" accept="image/*" class="box">
+            <p>your name </p>
+            <input type="text" name="name" placeholder="<?= $fetch_profile['name']; ?>" maxlength="50"  class="box">
+            
+            <p>your email </p>
+            <input type="email" name="email" placeholder="<?= $fetch_profile['email']; ?>" maxlength="20"  class="box">
+            <p>update pic :</p>
+            <input type="file" name="image" accept="image/*"  class="box">
          </div>
          <div class="col">
-            <p>old password <span>*</span></p>
-            <input type="password" name="old_pass" placeholder="enter your password" maxlength="20" required class="box">
-            <p>your password <span>*</span></p>
-            <input type="password" name="new_pass" placeholder="enter your password" maxlength="20" required class="box">
-            <p>confirm password <span>*</span></p>
-            <input type="password" name="cpass" placeholder="confirm your password" maxlength="20" required class="box">
+            <p>old password :</p>
+            <input type="password" name="old_pass" placeholder="enter your old password" maxlength="20"  class="box">
+            <p>new password :</p>
+            <input type="password" name="new_pass" placeholder="enter your new password" maxlength="20"  class="box">
+            <p>confirm password :</p>
+            <input type="password" name="cpass" placeholder="confirm your new password" maxlength="20"  class="box">
          </div>
       </div>
-      <input type="submit" name="submit" value="update profile" class="btn">
+      
+      <input type="submit" name="submit" value="update now" class="btn">
    </form>
 
 </section>
+<div class="main-container">
+<!-- registe section ends -->
+<!-- sweetalert cdn link  -->
+   <script src="https://cdnjs.cloudflare.com/ajax/libs/sweetalert/2.1.2/sweetalert.min.js"></script>
 
+   <!-- custom js link  -->
+   <script type="text/javascript" src="../js/script.js"></script>
 
-
-
-
-
-
-
-
-
-
-
-<?php include 'components/footer.php'; ?>
-
-<!-- custom js file link  -->
-<script src="js/script.js"></script>
+   <?php include '../components/alert.php'; ?>
    
 </body>
 </html>
